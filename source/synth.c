@@ -278,8 +278,7 @@ void UART0_INIT(void)
 // T2_INIT
 //-------------------------------------------------------------------------------------------
 //
-// Configure Timer 2 into Mode 0, set to overflow every ~0.1 seconds
-// Page 323 has good info
+// Configure Timer 2 into Mode 0, set to overflow at 194400 Hz
 //
 void T2_INIT(void)
 {
@@ -306,6 +305,12 @@ void T2_INIT(void)
     SFRPAGE = SFRPAGE_SAVE;     // Restore SFR page.
 }
 
+//-------------------------------------------------------------------------------------------
+// delay_us
+//-------------------------------------------------------------------------------------------
+//
+// Crude wait function using Timer 2
+//
 void delay_us(uint16_t waitTime)
 {
 	T2_Overflows = 0;
@@ -322,6 +327,12 @@ void delay_us(uint16_t waitTime)
 	ET2 = 0;
 }
 
+//-------------------------------------------------------------------------------------------
+// checkModePin
+//-------------------------------------------------------------------------------------------
+//
+// Checks the status of the mode pin. Pain in the ass due to sfr paging.
+//
 char checkModePin(void)
 {
 	char SFRPAGE_SAVE;
@@ -335,6 +346,12 @@ char checkModePin(void)
 	return returnVal;
 }
 
+//-------------------------------------------------------------------------------------------
+// waiting
+//-------------------------------------------------------------------------------------------
+//
+// FSM function for when NO bytes have been parsed
+//
 state_t waiting(char input)
 {
 	// If this is a status byte
@@ -363,6 +380,12 @@ state_t waiting(char input)
 	return WAITING;
 }
 
+//-------------------------------------------------------------------------------------------
+// one_byte
+//-------------------------------------------------------------------------------------------
+//
+// FSM function for when the FIRST byte of a message has been parsed
+//
 state_t one_byte(char input)
 {
 	
@@ -380,6 +403,12 @@ state_t one_byte(char input)
 	
 }
 
+//-------------------------------------------------------------------------------------------
+// two_bytes
+//-------------------------------------------------------------------------------------------
+//
+// FSM function for when TWO bytes of a message have been parsed
+//
 state_t two_bytes(char input)
 {
 	// If we get a control message instead of data
@@ -392,10 +421,10 @@ state_t two_bytes(char input)
 	if(message.opcode == NOTE_ON_OPCODE)
 	{
 		message.vol = input;
-		if(message.vol == 0x00)
-			noteOff(message.note, message.instrument);
-		else
-			noteOn(message.note, message.instrument, ~message.vol);
+		// Receiving a NOTE_ON with velocity 0 is the same as a NOTE_OFF
+		if(message.vol == 0x00) noteOff(message.note, message.instrument);
+		// Velocity in the YM2413 is inverse to what would be expected
+		else 					noteOn(message.note, message.instrument, ~message.vol);
 		return ONE_BYTE;
 	}
 	else
@@ -407,8 +436,11 @@ state_t two_bytes(char input)
 }
 
 //------------------------------------------------------------------------------------
-// putchar()
+// putchar
 //------------------------------------------------------------------------------------
+//
+// puts a character into the transmit buffer for UART0
+//
 void putchar(char c)
 {
     while(!TI0); 
@@ -419,6 +451,9 @@ void putchar(char c)
 //------------------------------------------------------------------------------------
 // getchar()
 //------------------------------------------------------------------------------------
+//
+//	BLOCKING implementation of getchar
+//
 char getchar(void)
 {
     char c;
@@ -426,15 +461,17 @@ char getchar(void)
     	if(checkModePin) return 0xFF;
     RI0 =0;
     c = SBUF0;
-// Echoing the get character back to the terminal is not normally part of getchar()
-    //putchar(c);    // echo to terminal
+	// Enabling echoing will send all MIDI data back - may be useful
+    //putchar(c);
     return SBUF0;
 }
 
 //------------------------------------------------------------------------------------
 // SW_ISR
 //------------------------------------------------------------------------------------
+//
 // ISR to increment the instrument
+//
 void SW_ISR (void) __interrupt 0
 {
 	if(state != KEYBOARD_MODE) return;
