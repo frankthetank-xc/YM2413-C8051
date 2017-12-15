@@ -1,4 +1,4 @@
-/* YM213.c
+/* YM213.h
  * 
  * Ken Schmitt and Frank Sinapi
  * MPS at RPI, Fall 2017
