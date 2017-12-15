@@ -11,20 +11,20 @@
 #include <c8051f120.h>
 #include <stdio.h>
 #include <stdint.h>
-// #include <putget.h>
 #include <stdlib.h>
 #include "YM2413.h"
 #include "keyboard.h"
+
 //------------------------------------------------------------------------------------
 // Global Constants
 //------------------------------------------------------------------------------------
-#define EXTCLK      22118400    // External oscillator frequency in Hz
+#define EXTCLK      22118400            // External oscillator frequency in Hz
 #define SYSCLK      49766400            // Output of PLL derived from (EXTCLK * 9/4)
 #define BAUDRATE    115200              // UART baud rate in bps
 
 #define SYSCLK_D_12	(SYSCLK / 12)		// Sys clock divided by 12
 
-#define TIMER_FREQ  (194400)      // Frequency of timer 2 in Hz
+#define TIMER_FREQ  (194400)                 // Frequency of timer 2 in Hz
 #define TICKS_T2    (SYSCLK / TIMER_FREQ)   // Number of ticks for 0.01 seconds
 #define T2_PRELOAD  ((0xFFFF) - TICKS_T2)   // Subtract ticks from T2 overflow level
 
@@ -116,8 +116,8 @@ void main (void)
     		}
     		// Get a new byte ASAP
 	    	input = getchar();
+	    	
 	    	// Handle the input
-			
 			switch(state)
 	    	{
 	    		case WAITING:
@@ -132,7 +132,6 @@ void main (void)
 	    		default:
 	    			break;
 	    	}
-			
 	    	//putchar(input);
     	}
     	else

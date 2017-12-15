@@ -32,16 +32,13 @@
 //------------------------------------------------------------------------------------
 // Typedefs
 //------------------------------------------------------------------------------------
-
 typedef struct {
 	uint8_t current[(NUM_KEYS / 8) + 1];
 	uint8_t last[(NUM_KEYS / 8) + 1];
 } keyboard_t;
 
-
 // The delay_us function is defined in the main driver of the program
 extern void delay_us(uint16_t waitTime);
-
 
 //------------------------------------------------------------------------------------
 // Global Functions
@@ -91,6 +88,7 @@ void initKeyboard(keyboard_t *keyboard)
     P7MDOUT = 0xFF;				// Port 7 outputs initially off
    	P7 = 0x00;
 
+   	// Clear the states of the keys
    	for(i = 0; i < NUM_KEYS; ++i)
    	{
    		bitOff(keyboard->current, i);
@@ -106,14 +104,14 @@ void initKeyboard(keyboard_t *keyboard)
 // Read the keyboard and update the keyboard status struct
 void updateKeyboard(keyboard_t *keyboard)
 {
-	uint8_t row, col, data, key;
+	uint8_t row, col, data, key;	// Declare local variables
 
 	char SFRPAGE_SAVE = SFRPAGE;
-	SFRPAGE = CONFIG_PAGE;
+	SFRPAGE = CONFIG_PAGE;			// Save the SFR Page
 
 	for(row = 0; row < ROWS; ++row)
 	{
-		P7 = 1 << row;				// Set one bit of P7  high
+		P7 = 1 << row;				// Set one bit of P7 high
 		delay_us(KBD_DELAY);		// Give time to settle
 		data = (P5 << 1);			// Read in data (shift bc we only use 7 of 8 pins)
 		for(col = 0; col < COLS; ++col)
@@ -125,11 +123,13 @@ void updateKeyboard(keyboard_t *keyboard)
 			// Result of the weird layout of the PSS-140 kbd
 			key = (col * ROWS) + row - (ROWS - 1);
 
-			// Set the "last" field
+			// Set the "last" state
 			if(bitState(keyboard->current, key) )
 				bitOn(keyboard->last, key);
 			else
 				bitOff(keyboard->last, key);
+			
+			// Set the "current" state
 			if(data & 0x80)	
 				bitOn(keyboard->current, key);	// Key is on
 			else	
