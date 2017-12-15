@@ -168,14 +168,13 @@ int8_t noteOn(uint8_t note, uint8_t instr, uint8_t vol)
 		{
 			setInstrument(voice, instr, vol >> 3);
 			setNote(voice, note, NOTE_ON);
+			voiceItr = (voiceItr + 1) % MAX_VOICES;
 			return 0;
 		}
 		++i;
 	}
 	// Move the round robin tracker
-	++voiceItr;
-	if(voiceItr == MAX_VOICES)
-		voiceItr = 0;
+	voiceItr = (voiceItr + 1) % MAX_VOICES;
 	// If we couldn't allocate a new voice, just quit :(
 	return -1;
 }
